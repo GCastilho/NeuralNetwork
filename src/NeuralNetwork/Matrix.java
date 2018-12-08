@@ -3,7 +3,7 @@ package NeuralNetwork;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-public class SimpleMatrixLibrary {
+public class Matrix {
 	public static double[] multiply(double[][] matrix, double[] vector){
 		//TODO: understand how this works OR rewrite as the other multiply function
 		return(Arrays.stream(matrix).mapToDouble(row -> IntStream.range(0, row.length).mapToDouble(col -> row[col] * vector[col]).sum()).toArray());
@@ -19,7 +19,7 @@ public class SimpleMatrixLibrary {
 		return(matrix);
 	}
 
-	public static double[][] transposeMatrix(double[][] m){
+	public static double[][] transpose(double[][] m){
 		double[][] matrix = new double[m[0].length][m.length];
 		for(int i = 0; i < m.length; ++i){
 			for(int j = 0; j < m[0].length; ++j){

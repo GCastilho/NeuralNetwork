@@ -13,7 +13,7 @@ public class NeuralNetwork {
 		//Create layers's matrix
 		this.layer = new double[size][];
 		for(int layerNum=0; layerNum<size; ++layerNum) {
-			layer[layerNum] = new double[layers[layerNum]];
+			this.layer[layerNum] = new double[layers[layerNum]];
 		}
 
 		/*  Create z, weight, adjustmentWeight and bias's matrix
@@ -22,66 +22,59 @@ public class NeuralNetwork {
 			The adjustmentWeight's matrix are the calibration values for the weight's matrix (they have the same size)
 			*** bias is currently not used ****/
 		this.z = new double[size][];
+		this.bias = new double[size][];
 		this.weight = new double[size][][];
 		this.adjustmentWeight = new double[size][][];
-		this.bias = new double[size][];
+
 		for(int layerNum=1; layerNum<size; ++layerNum) {
-			weight[layerNum] = new double[layers[layerNum]][layers[layerNum-1]];
-			adjustmentWeight[layerNum] = new double[layers[layerNum]][layers[layerNum-1]];
-			bias[layerNum] = new double[layers[layerNum]];
+			this.bias[layerNum] = new double[layers[layerNum]];
+			this.weight[layerNum] = new double[layers[layerNum]][layers[layerNum-1]];
+			this.adjustmentWeight[layerNum] = new double[layers[layerNum]][layers[layerNum-1]];
 		}
 
 		//Fill in the biases with 0
 		for(int m=1; m<bias.length; ++m) {
 			for(int n=0; n<bias[m].length; ++n) {
-				bias[m][n] = 0.0;
+				this.bias[m][n] = 0.0;
 			}
 		}
 
 		//Fill in weight matrix with random values from -5 to 5 that are not 0
+		//Fill in adjustmentWeight matrix with 0
 		for(int layerNum=1; layerNum<weight.length; ++layerNum) {
 			for(int m=0; m<weight[layerNum].length; ++m) {
 				for(int n=0; n<weight[layerNum][m].length; ++n) {
-					weight[layerNum][m][n] = 0.0;
+					this.adjustmentWeight[layerNum][m][n] = 0.0;
+
+					this.weight[layerNum][m][n] = 0.0;
 					while(weight[layerNum][m][n] == 0) {
-						weight[layerNum][m][n] = Math.random() * 10 - 5;
+						this.weight[layerNum][m][n] = Math.random() * 10 - 5;
 					}
 				}
 			}
 		}
-		System.out.printf("Created Neural network with: %d layers\n", size);
+		System.out.printf("Created neural network with: %d layers\n", size);
 	}
 
-	public double[] think(double[] input) {
+	public double[] think(double[] input) throws IllegalArgumentException {
 		if(layer[0].length != input.length) {
-			//TODO: Throw exception
-			System.out.println("Empty think input");
+			throw new IllegalArgumentException("Network input neurons mismatch with given input");
 		}
 		layer[0] = input;
 		for(int i=1; i<layer.length; ++i){
-			z[i] = SimpleMatrixLibrary.multiply(weight[i], layer[i-1]);    //Calculate Z
+			z[i] = Matrix.multiply(weight[i], layer[i-1]);		//Calculate Z
 			for(int j=0; j<layer[i].length; ++j){
-				layer[i][j] = nonLinear(z[i][j]);       //Calculate activation function for each layer
+				layer[i][j] = nonLinear(z[i][j]);				//Calculate activation function for each layer
 			}
 		}
-		return(layer[layer.length-1]);                  //Return last neuron's output as an array
+		return(layer[layer.length-1]);							//Return last neuron's output as an array
 	}
 
 	//TODO: Modificar o nome 'learn' da função para atender mais precisamente o q ela faz
 	public void learn(double[][] learnSet) {
-		System.out.print("Input: ");
-		for (int i=0; i<learnSet[0].length; i++) {
-			System.out.printf("%f ", learnSet[0][i]);
-		}
-		System.out.print("\nTarget output: ");
-		for (int i=0; i<learnSet[1].length; i++) {
-			System.out.printf("%f ", learnSet[0][i]);
-		}
-		System.out.println();
-		/*
-			learnSet[0][] are the inputs
-			learnSet[1][] are the expected outputs (the right answers)
-		*/
+		/*	learnSet[0][] are the inputs
+			learnSet[1][] are the expected outputs (the right answers)	*/
+		//TODO: exceção para se o learnSet tiver tamanho incorreto
 		double[][] sigma = new double[layer.length][];
 
 		//Train the network
@@ -101,7 +94,7 @@ public class NeuralNetwork {
 
 		//Sigma of the others neurons
 		for(int layerNum=layer.length-2; 0<layerNum; --layerNum){
-			sigma[layerNum] = SimpleMatrixLibrary.multiply(SimpleMatrixLibrary.transposeMatrix(weight[layerNum+1]), sigma[layerNum+1]);
+			sigma[layerNum] = Matrix.multiply(Matrix.transpose(weight[layerNum+1]), sigma[layerNum+1]);
 			for(int neuron=0; neuron<sigma[layerNum].length; ++neuron){
 				sigma[layerNum][neuron] = sigma[layerNum][neuron] * nonLinearDerivative(z[layerNum][neuron]);
 			}
@@ -111,8 +104,7 @@ public class NeuralNetwork {
 		for(int layerNum=layer.length-1; 0<layerNum; --layerNum){
 			for(int m=0; m<weight[layerNum].length; ++m){
 				for(int n=0; n<weight[layerNum][0].length; ++n){
-					this.adjustmentWeight[layerNum][m][n] = 0.0;	//Reset adjustmentWeight's values
-					this.adjustmentWeight[layerNum][m][n] -= SimpleMatrixLibrary.multiply(sigma[layerNum], layer[layerNum-1])[m][n];
+					this.adjustmentWeight[layerNum][m][n] -= Matrix.multiply(sigma[layerNum], layer[layerNum-1])[m][n];
 				}
 			}
 		}
