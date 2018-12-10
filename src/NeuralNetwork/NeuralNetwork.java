@@ -40,12 +40,9 @@ public class NeuralNetwork {
 		}
 
 		//Fill in weight matrix with random values from -5 to 5 that are not 0
-		//Fill in adjustmentWeight matrix with 0
 		for(int layerNum=1; layerNum<weight.length; ++layerNum) {
 			for(int m=0; m<weight[layerNum].length; ++m) {
 				for(int n=0; n<weight[layerNum][m].length; ++n) {
-					this.adjustmentWeight[layerNum][m][n] = 0.0;
-
 					this.weight[layerNum][m][n] = 0.0;
 					while(weight[layerNum][m][n] == 0) {
 						this.weight[layerNum][m][n] = Math.random() * 10 - 5;
@@ -56,7 +53,8 @@ public class NeuralNetwork {
 		System.out.printf("Created neural network with: %d layers\n", size);
 	}
 
-	public double[] think(double[] input) throws IllegalArgumentException {
+	public double[] think(double[] input) throws IllegalArgumentException,NullPointerException {
+		if (input == null) throw new IllegalArgumentException("Network input is null");
 		if(layer[0].length != input.length) {
 			throw new IllegalArgumentException("Network input neurons mismatch with given input");
 		}
@@ -70,11 +68,10 @@ public class NeuralNetwork {
 		return(layer[layer.length-1]);							//Return last neuron's output as an array
 	}
 
-	//TODO: Modificar o nome 'learn' da função para atender mais precisamente o q ela faz
-	public void learn(double[][] learnSet) {
+	public double[][][] learn(double[][] learnSet) throws IllegalArgumentException {
+		//TODO: Modificar o nome 'train' da função para atender mais precisamente o q ela faz
 		/*	learnSet[0][] are the inputs
 			learnSet[1][] are the expected outputs (the right answers)	*/
-		//TODO: exceção para se o learnSet tiver tamanho incorreto
 		double[][] sigma = new double[layer.length][];
 
 		//Train the network
@@ -100,14 +97,15 @@ public class NeuralNetwork {
 			}
 		}
 
-		//Calculate adjustment weight
+		//Calculate adjustment weight required for this specific test
 		for(int layerNum=layer.length-1; 0<layerNum; --layerNum){
 			for(int m=0; m<weight[layerNum].length; ++m){
 				for(int n=0; n<weight[layerNum][0].length; ++n){
-					this.adjustmentWeight[layerNum][m][n] -= Matrix.multiply(sigma[layerNum], layer[layerNum-1])[m][n];
+					adjustmentWeight[layerNum][m][n] = 0.0 - Matrix.multiply(sigma[layerNum], layer[layerNum-1])[m][n];
 				}
 			}
 		}
+		return(adjustmentWeight);
 	}
 
 	private static double nonLinear(double x){
@@ -119,12 +117,21 @@ public class NeuralNetwork {
 		return(sigmoid*(1-sigmoid));
 	}
 
-	public void updateWeights() {
+	public void updateWeights(double[][][] adjustmentWeight) throws NullPointerException {
 		for(int layerNum=layer.length-1; 0<layerNum; --layerNum){
 			for(int m=0; m<weight[layerNum].length; ++m){
 				for(int n=0; n<weight[layerNum][0].length; ++n){
-					this.weight[layerNum][m][n] += this.adjustmentWeight[layerNum][m][n];
-					this.adjustmentWeight[layerNum][m][n] = 0.0;	//Reset adjustmentWeight's values
+					this.weight[layerNum][m][n] += adjustmentWeight[layerNum][m][n];
+				}
+			}
+		}
+	}
+
+	public void setWeight(double[][][] newWeight) throws NullPointerException {
+		for (int i=1; i<weight.length; i++) {
+			for (int j=0; j<weight[i].length; j++) {
+				for (int k=0; k<weight[i][j].length; k++) {
+					this.weight[i][j][k] = newWeight[i][j][k];
 				}
 			}
 		}
